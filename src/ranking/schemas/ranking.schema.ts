@@ -25,6 +25,9 @@ export class Ranking extends Document {
     name: string;
 
     @Prop()
+    lastName: string;
+
+    @Prop()
     description: string;
 
     @Prop()

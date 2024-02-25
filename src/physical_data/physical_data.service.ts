@@ -33,18 +33,15 @@ export class PhysicalDataService {
 
             if (lastPhysicalData) {
                 const user = await this.userModel.findOne({ id: lastPhysicalData.userId }).exec();
-
                 const difference: number = Number((newPhysicalData.gorduraPercentual - lastPhysicalData.gorduraPercentual).toFixed(2));
-                console.log('diferença', difference)
                 const pontosMensais: number = -difference * 100;
-                console.log('pontos', pontosMensais)
 
                 if (difference < 0) {
-                    await this.updateRanking(lastPhysicalData.userId, pontosMensais, user?.name, user?.photo, 'Ganhou 10 pontos devido a uma redução de 0.1% de gordura.');
+                    await this.updateRanking(lastPhysicalData.userId, pontosMensais, user?.photo, 'Ganhou 10 pontos devido a uma redução de 0.1% de gordura.');
                 } else if (difference > 0) {
-                    await this.updateRanking(lastPhysicalData.userId, pontosMensais, user?.name, user?.photo, 'Perdeu 10 pontos devido a um aumento de 0.1% de gordura.');
+                    await this.updateRanking(lastPhysicalData.userId, pontosMensais, user?.photo, 'Perdeu 10 pontos devido a um aumento de 0.1% de gordura.');
                 } else {
-                    await this.updateRanking(lastPhysicalData.userId, 0, user?.name, user?.photo, 'Manteve a pontuação por ter mantido um percentual de gordura estável ou variando dentro da margem de erro.');
+                    await this.updateRanking(lastPhysicalData.userId, 0, user?.photo, 'Manteve a pontuação por ter mantido um percentual de gordura estável ou variando dentro da margem de erro.');
                 }
             }
         }
@@ -52,43 +49,56 @@ export class PhysicalDataService {
         return await this.physicalDataModel.create(newPhysicalData);
     }
 
-    private async updateRanking(userId: string, points: number, name: string, image: string, description: string): Promise<void> {
-        const ranking = await this.rankingModel.findOne({ userId }).exec();
+    private async updateRanking(userId: string, points: number, image: string, description: string): Promise<void> {
+        const user = await this.userModel.findOne({ _id: userId }).exec();
+        console.log('User', user)
+
+        if (user) {
+            const ranking = await this.rankingModel.findOne({ userId }).exec();
+
+            if (ranking) {
+                const lastRankingEntry = await this.rankingModel
+                    .findOne({ userId })
+                    .sort({ date: -1 })
+                    .exec();
+
+                const currentMonth = lastRankingEntry.date.getMonth() + 1;
+
+                const entryDate = new Date();
+                // const nextMonthDate = new Date(entryDate);
+                // nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
+                const entryMonth = entryDate.getMonth() + 1
 
 
-        if (ranking) {
-            const lastRankingEntry = await this.rankingModel
-                .findOne({ userId })
-                .sort({ date: -1 })
-                .exec();
+                if (currentMonth < entryMonth) {
+                    console.log('Entrei no if!', entryMonth, currentMonth)
 
-            const currentMonth = lastRankingEntry ? lastRankingEntry.date.getMonth() : new Date().getMonth() + 1;
-            const entryMonth = new Date().getMonth() + 3;
+                    ranking.monthlyPoints = 0;
+                    ranking.totalPoints += points;
+                    ranking.monthlyPoints += points;
+                    ranking.date = entryDate
+                } else {
+                    console.log('Entrei no else!', entryMonth, currentMonth)
+                    ranking.totalPoints += points;
+                    ranking.monthlyPoints += points;
+                }
+                await ranking.save();
 
-            console.log('Mês anterior', currentMonth)
-            console.log('Mês de entrada', entryMonth)
-
-            if (entryMonth > currentMonth) {
-                ranking.monthlyPoints = 0;
-                ranking.totalPoints += points;
-                ranking.monthlyPoints += points;
             } else {
-                ranking.totalPoints += points;
-                ranking.monthlyPoints += points;
+                await this.rankingModel.create({
+                    userId,
+                    totalPoints: points,
+                    monthlyPoints: points,
+                    name: user.name,
+                    lastName: user.lastname,
+                    description,
+                    date: new Date(),
+                    image
+                });
             }
-            await ranking.save();
-
-
         } else {
-            await this.rankingModel.create({
-                userId,
-                totalPoints: points,
-                monthlyPoints: points,
-                name,
-                description,
-                date: new Date(),
-                image
-            });
+            // Tratar o caso em que o usuário não existe
+            console.error('Usuário não encontrado:', userId);
         }
     }
 
