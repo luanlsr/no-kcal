@@ -34,7 +34,7 @@ export class UsersService {
     }
 
     async edit(user: User): Promise<User> {
-        const updatedUser = await this.userModel.findByIdAndUpdate(user.id, user, {
+        const updatedUser = await this.userModel.findByIdAndUpdate(user._id, user, {
             new: true,
             runValidators: true
         });
