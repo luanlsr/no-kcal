@@ -14,7 +14,7 @@ import { RankingDetailsModule } from './ranking-details/ranking-details.module';
       envFilePath: '.env',
       isGlobal: true
     }),
-    MongooseModule.forRoot(process.env.DB_URI || 'mongodb+srv://luanfswd:IyL3nqg0m0XsWnK5@cluster0.vrql7iw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'),
+    MongooseModule.forRoot('mongodb+srv://luanfswd:IyL3nqg0m0XsWnK5@cluster0.vrql7iw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'),
     UsersModule,
     PhysicalDataModule,
     RankingModule,
