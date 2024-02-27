@@ -5,11 +5,13 @@ import * as cors from 'cors';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.use(cors({
-    origin: 'https://no-kcal-production.up.railway.app',
+  const corsOptions = {
+    origin: 'https://main--no-kcal.netlify.app',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
-  }));
+  };
+
+  app.use(cors(corsOptions))
 
   await app.listen(process.env.PORT || 3001);
 }
