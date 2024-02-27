@@ -19,7 +19,7 @@ export class RankingService {
     }
 
     async edit(Ranking: Ranking): Promise<Ranking> {
-        const updatedRanking = await this.rankingModel.findByIdAndUpdate(Ranking.id, Ranking, { new: true });
+        const updatedRanking = await this.rankingModel.findByIdAndUpdate(Ranking._id, Ranking, { new: true });
         if (!updatedRanking) {
             throw new NotFoundException('Ranking não encontrado!');
         }

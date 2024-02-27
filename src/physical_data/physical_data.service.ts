@@ -4,6 +4,8 @@ import { Model } from 'mongoose';
 import { PhysicalData } from './schemas/physical.schema';
 import { Ranking } from 'src/ranking/schemas/ranking.schema';
 import { User } from 'src/users/schemas/user.schema';
+import { RankingDetails } from 'src/ranking-details/schemas/ranking-details.schema';
+import { IUser } from 'src/users/dto/create-user.dto';
 
 @Injectable()
 export class PhysicalDataService {
@@ -13,7 +15,9 @@ export class PhysicalDataService {
         @InjectModel(Ranking.name)
         private readonly rankingModel: Model<Ranking>,
         @InjectModel(User.name)
-        private readonly userModel: Model<User>
+        private readonly userModel: Model<User>,
+        @InjectModel(RankingDetails.name)
+        private readonly rankingDetailsModel: Model<RankingDetails>
     ) { }
 
     async getAll(): Promise<PhysicalData[]> {
@@ -21,44 +25,55 @@ export class PhysicalDataService {
     }
 
     async insertPhysicalDataAndCheckRanking(newPhysicalData: PhysicalData): Promise<PhysicalData> {
-        let lastPhysicalData: PhysicalData = null;
+        let ranking: Ranking = null;
 
-        if (newPhysicalData) {
-            newPhysicalData.date = new Date();
+        const user = await this.userModel.findById(newPhysicalData.userId).exec();
+        if (user) {
+            if (newPhysicalData) {
+                newPhysicalData.date = new Date();
 
-            lastPhysicalData = await this.physicalDataModel
-                .findOne({ userId: newPhysicalData.userId })
-                .sort({ date: -1 })
-                .exec();
+                const lastPhysicalData = await this.physicalDataModel
+                    .findOne({ userId: newPhysicalData.userId })
+                    .sort({ date: -1 })
+                    .exec();
 
-            if (lastPhysicalData) {
-                const user = await this.userModel.findOne({ id: lastPhysicalData.userId }).exec();
-                const difference: number = Number((newPhysicalData.gorduraPercentual - lastPhysicalData.gorduraPercentual).toFixed(2));
-                const pontosMensais: number = -difference * 100;
+                if (lastPhysicalData) {
+                    const difference: number = Number((newPhysicalData.gorduraPercentual - lastPhysicalData.gorduraPercentual).toFixed(2));
+                    const pontosMensais: number = -difference * 100;
+                    console.log('lastPhysicalData', lastPhysicalData)
 
-                if (difference < 0) {
-                    await this.updateRanking(lastPhysicalData.userId, pontosMensais, user?.photo, 'Ganhou 10 pontos devido a uma redução de 0.1% de gordura.');
-                } else if (difference > 0) {
-                    await this.updateRanking(lastPhysicalData.userId, pontosMensais, user?.photo, 'Perdeu 10 pontos devido a um aumento de 0.1% de gordura.');
-                } else {
-                    await this.updateRanking(lastPhysicalData.userId, 0, user?.photo, 'Manteve a pontuação por ter mantido um percentual de gordura estável ou variando dentro da margem de erro.');
+                    if (difference < 0) {
+                        ranking = await this.updateRanking(user._id, pontosMensais, 'Ganhou 10 pontos devido a uma redução de 0.1% de gordura.');
+                    } else if (difference > 0) {
+                        ranking = await this.updateRanking(user._id, pontosMensais, 'Perdeu 10 pontos devido a um aumento de 0.1% de gordura.');
+                    } else {
+                        ranking = await this.updateRanking(user._id, 0, 'Manteve a pontuação por ter mantido um percentual de gordura estável ou variando dentro da margem de erro.');
+                    }
+
+                    const rankingDetails = await this.rankingDetailsModel.findOne({ user: user._id });
+                    console.log(rankingDetails);
+
+                    if (!rankingDetails)
+                        await this.rankingDetailsModel.create({ user, ranking, physicalData: lastPhysicalData })
+
+                    await this.rankingDetailsModel.findByIdAndUpdate(rankingDetails._id, rankingDetails, { new: true })
                 }
             }
-        }
 
-        return await this.physicalDataModel.create(newPhysicalData);
+            return await this.physicalDataModel.create(newPhysicalData);
+        } else {
+            console.error('Usuário não encontrado:');
+        }
     }
 
-    private async updateRanking(userId: string, points: number, image: string, description: string): Promise<void> {
+    private async updateRanking(userId: string, points: number, description: string): Promise<Ranking> {
         const user = await this.userModel.findOne({ _id: userId }).exec();
-        console.log('User', user)
-
         if (user) {
             const ranking = await this.rankingModel.findOne({ userId }).exec();
 
             if (ranking) {
                 const lastRankingEntry = await this.rankingModel
-                    .findOne({ userId })
+                    .findOne({ userId: userId })
                     .sort({ date: -1 })
                     .exec();
 
@@ -69,41 +84,40 @@ export class PhysicalDataService {
                 // nextMonthDate.setMonth(nextMonthDate.getMonth() + 1);
                 const entryMonth = entryDate.getMonth() + 1
 
-
                 if (currentMonth < entryMonth) {
-                    console.log('Entrei no if!', entryMonth, currentMonth)
-
                     ranking.monthlyPoints = 0;
                     ranking.totalPoints += points;
                     ranking.monthlyPoints += points;
                     ranking.date = entryDate
                 } else {
-                    console.log('Entrei no else!', entryMonth, currentMonth)
                     ranking.totalPoints += points;
                     ranking.monthlyPoints += points;
                 }
                 await ranking.save();
+                return ranking;
 
             } else {
-                await this.rankingModel.create({
-                    userId,
+                const createdRanking = await this.rankingModel.create({
+                    userId: user._id,
                     totalPoints: points,
                     monthlyPoints: points,
                     name: user.name,
                     lastName: user.lastname,
                     description,
                     date: new Date(),
-                    image
+                    image: user.photo
                 });
+
+                return createdRanking;
             }
         } else {
             // Tratar o caso em que o usuário não existe
-            console.error('Usuário não encontrado:', userId);
+            console.error('Usuário não encontrado:', user._id);
         }
     }
 
-    async edit(PhysicalData: PhysicalData): Promise<PhysicalData> {
-        const updatedPhysicalData = await this.physicalDataModel.findByIdAndUpdate(PhysicalData.id, PhysicalData, { new: true });
+    async edit(physicalData: PhysicalData): Promise<PhysicalData> {
+        const updatedPhysicalData = await this.physicalDataModel.findByIdAndUpdate(physicalData._id, physicalData, { new: true });
         if (!updatedPhysicalData) {
             throw new NotFoundException('PhysicalData não encontrado!');
         }

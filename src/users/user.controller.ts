@@ -23,8 +23,8 @@ export class UsersController {
     }
 
     @Put()
-    async edit(@Body() id): Promise<User> {
-        return this.usersService.edit(id);
+    async edit(@Body() user): Promise<User> {
+        return this.usersService.edit(user);
     }
 
     @Delete(':id')

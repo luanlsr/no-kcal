@@ -7,6 +7,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PhysicalDataSchema } from './schemas/physical.schema';
 import { RankingSchema } from 'src/ranking/schemas/ranking.schema';
 import { UsersSchema } from 'src/users/schemas/user.schema';
+import { RankingDetailsSchema } from 'src/ranking-details/schemas/ranking-details.schema';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { UsersSchema } from 'src/users/schemas/user.schema';
       , { name: 'PhysicalData', schema: PhysicalDataSchema }
       , { name: 'Ranking', schema: RankingSchema }
       , { name: 'User', schema: UsersSchema }
+      , { name: 'RankingDetails', schema: RankingDetailsSchema }
     ]),
   ],
   controllers: [PhysicalDataController],
