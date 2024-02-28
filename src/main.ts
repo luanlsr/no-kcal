@@ -6,8 +6,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const corsOptions = {
-    // origin: 'https://main--no-kcal.netlify.app',
-    origin: 'http://localhost:3000',
+    origin: 'https://main--no-kcal.netlify.app',
+    // origin: 'http://localhost:3000',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   };
