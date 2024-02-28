@@ -56,7 +56,7 @@ export class PhysicalDataService {
                     if (!rankingDetails)
                         await this.rankingDetailsModel.create({ user, ranking, physicalData: lastPhysicalData })
 
-                    await this.rankingDetailsModel.findByIdAndUpdate(rankingDetails._id, rankingDetails, { new: true })
+                    await this.rankingDetailsModel.findByIdAndUpdate(rankingDetails?._id, rankingDetails, { new: true })
                 }
             }
 

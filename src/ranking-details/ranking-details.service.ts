@@ -48,6 +48,7 @@ export class RankingDetailsService {
                             gorduraPercentual: detail.physicalData.gorduraPercentual,
                             pesoGordura: detail.physicalData.pesoGordura,
                             percentualMassaMuscularEsquelatica: detail.physicalData.percentualMassaMuscularEsquelatica,
+                            pesoMassaMuscularEsquelatica: detail.physicalData.pesoMassaMuscularEsquelatica,
                             registroMassaMuscular: detail.physicalData.registroMassaMuscular,
                             pesoMassaMuscular: detail.physicalData.pesoMassaMuscular,
                             aguaPercentual: detail.physicalData.aguaPercentual,

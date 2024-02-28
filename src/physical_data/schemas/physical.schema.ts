@@ -29,6 +29,9 @@ export class PhysicalData extends Document {
     percentualMassaMuscularEsquelatica: number;
 
     @Prop()
+    pesoMassaMuscularEsquelatica: number;
+
+    @Prop()
     registroMassaMuscular: number;
 
     @Prop()
