@@ -38,13 +38,14 @@ export class PhysicalDataService {
                     .exec();
 
                 if (lastPhysicalData) {
-                    const difference: number = Number((newPhysicalData.gorduraPercentual - lastPhysicalData.gorduraPercentual).toFixed(2));
-                    const pontosMensais: number = -difference * 100;
-                    console.log('lastPhysicalData', lastPhysicalData)
+                    const differencePercentualFat: number = Number((newPhysicalData.gorduraPercentual - lastPhysicalData.gorduraPercentual).toFixed(2));
+                    const differenceWeightFat: number = Number((newPhysicalData.pesoGordura - lastPhysicalData.pesoGordura).toFixed(2));
+                    const differenceMuscle: number = Number((newPhysicalData.percentualMassaMuscularEsquelatica - lastPhysicalData.percentualMassaMuscularEsquelatica).toFixed(2));
+                    const pontosMensais: number = -differencePercentualFat * 100;
 
-                    if (difference < 0) {
+                    if (differencePercentualFat < 0) {
                         ranking = await this.updateRanking(user._id, pontosMensais, 'Ganhou 10 pontos devido a uma redução de 0.1% de gordura.');
-                    } else if (difference > 0) {
+                    } else if (differencePercentualFat > 0) {
                         ranking = await this.updateRanking(user._id, pontosMensais, 'Perdeu 10 pontos devido a um aumento de 0.1% de gordura.');
                     } else {
                         ranking = await this.updateRanking(user._id, 0, 'Manteve a pontuação por ter mantido um percentual de gordura estável ou variando dentro da margem de erro.');
